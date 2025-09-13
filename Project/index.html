@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baymax</title>
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #36393f;
+      color: #dcddde;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      width: 450px;
+      height: 600px;
+      background-color: #2f3136;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .chat-header {
+      padding: 14px 16px;
+      background-color: #202225;
+      font-size: 18px;
+      font-weight: 600;
+      border-bottom: 1px solid #202225;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      word-wrap: break-word;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background-color: #7289da;
+      color: white;
+      border-bottom-right-radius: 2px;
+    }
+
+    .bot-message {
+      align-self: flex-start;
+      background-color: #4f545c;
+      color: #dcddde;
+      border-bottom-left-radius: 2px;
+    }
+
+    .typing {
+      font-style: italic;
+      color: #b9bbbe;
+    }
+
+    .typing-dots::after {
+      content: '...';
+      animation: blink 1s steps(5, start) infinite;
+    }
+
+    @keyframes blink {
+      0%, 20%, 50%, 80%, 100% { opacity: 0; }
+      10%, 30%, 60%, 90% { opacity: 1; }
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 10px 12px;
+      border-top: 1px solid #202225;
+      background-color: #40444b;
+      gap: 6px;
+    }
+
+    .chat-input textarea {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: none;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      background-color: #303339;
+      color: #dcddde;
+    }
+
+    .chat-input button {
+      padding: 8px 14px;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .chat-input button:hover {
+      background-color: #5b6eae;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background-color: #202225;
+      border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="chat-header">Baymax Your Personal Healthcare Companion</div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input">
+      <textarea id="userInput" placeholder="Type a message..."></textarea>
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatMessages = document.getElementById('chatMessages');
+    const inputField = document.getElementById('userInput');
+
+    inputField.addEventListener('input', () => {
+      inputField.style.height = 'auto';
+      inputField.style.height = inputField.scrollHeight + 'px';
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+    });
+
+    inputField.addEventListener('keydown', function(event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    async function sendMessage() {
+      let input = inputField.value.trim();
+      if (!input) return;
+
+      addMessage(input, 'user');
+      inputField.value = '';
+      inputField.style.height = 'auto';
+
+      // Typing indicator with animated dots
+      const typingIndicator = addMessage("Bot is typing", 'bot', true, true);
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
+        const data = await response.json();
+
+        await new Promise(res => setTimeout(res, 800));
+
+        typingIndicator.remove();
+        addMessage(data.reply, 'bot');
+
+      } catch (error) {
+        typingIndicator.remove();
+        addMessage("Error: Could not reach the server.", 'bot');
+      }
+
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+    }
+
+    function addMessage(text, type, isTyping=false, animateDots=false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message');
+      msgDiv.classList.add(type === 'user' ? 'user-message' : 'bot-message');
+      if (isTyping) msgDiv.classList.add('typing');
+      if (animateDots) msgDiv.classList.add('typing-dots');
+      msgDiv.textContent = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+      return msgDiv;
+    }
+  </script>
+
+</body>
+</html>
