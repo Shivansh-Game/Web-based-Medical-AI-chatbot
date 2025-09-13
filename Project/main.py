@@ -8,7 +8,7 @@ from chatbot import MedicalChatbot
 
 app = FastAPI()
 
-model_path = "Models\\BioMistral-7B.Q4_K_M.gguf"
+model_path = "models\\BioMistral-7B.Q4_K_M.gguf"
 bot = MedicalChatbot(model_path=model_path, n_threads=2)
 
 
