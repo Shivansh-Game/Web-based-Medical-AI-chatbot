@@ -45,8 +45,8 @@ Follow these instructions to get a local copy up and running for development and
 
 1.  **Clone the repository:**
     ```sh
-    git clone [https://github.com/Shivansh-Game/your-repo-name.git](https://github.com/Shivansh-Game/your-repo-name.git)
-    cd your-repo-name
+    git clone [https://github.com/Shivansh-Game/Web-based-Medical-AI-chatbot.git](https://github.com/Shivansh-Game/Web-based-Medical-AI-chatbot.git)
+    cd Web-based-Medical-AI-chatbot
     ```
 2.  **Create and activate a virtual environment:**
     ```sh
