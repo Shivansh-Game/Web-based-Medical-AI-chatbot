@@ -1,0 +1,21 @@
+# --- Core Web Framework & Server ---
+# For building the API
+fastapi
+# For running the FastAPI server
+uvicorn[standard]
+
+# --- AI & Machine Learning ---
+# For the local LLM (Baymax)
+llama-cpp-python
+# Core library for the translation model
+torch
+# For the NLLB translation model from Hugging Face
+transformers
+# Recommended for efficient model loading with device_map="auto"
+accelerate
+
+# --- APIs & Utilities ---
+# For the WhatsApp integration
+twilio
+# For loading your API keys from a .env file
+python-dotenv
