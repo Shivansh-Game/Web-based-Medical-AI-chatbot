@@ -1,209 +1,551 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Baymax</title>
-  <style>
-    body, html {
-      height: 100%;
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #36393f;
-      color: #dcddde;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baymax - Personal Healthcare Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #0a0a10;
+            --surface: rgba(20, 20, 35, 0.6);
+            --header-surface: rgba(30, 30, 50, 0.7);
+            --primary-accent: #89b4fa;
+            --text-primary: #e0e0ff;
+            --text-secondary: #a0a0c0;
+            --user-bubble: linear-gradient(135deg, #7f84e8, #6a6ed0);
+            --bot-bubble: #2a2a40;
+            --input-bg: rgba(10, 10, 16, 0.8);
+            --glow-color: rgba(137, 180, 250, 0.5);
+            --border-color: rgba(137, 180, 250, 0.2);
+        }
 
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-      width: 450px;
-      height: 600px;
-      background-color: #2f3136;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
 
-    .chat-header {
-      padding: 14px 16px;
-      background-color: #202225;
-      font-size: 18px;
-      font-weight: 600;
-      border-bottom: 1px solid #202225;
-    }
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--background);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
 
-    .chat-messages {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
 
-    .message {
-      max-width: 70%;
-      padding: 10px 14px;
-      border-radius: 8px;
-      word-wrap: break-word;
-      font-size: 14px;
-      line-height: 1.4;
-    }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 500px;
+            height: 80vh;
+            max-height: 800px;
+            min-height: 600px;
+            background-color: var(--surface);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px var(--border-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            transition: width 0.3s, height 0.3s;
+        }
 
-    .user-message {
-      align-self: flex-end;
-      background-color: #7289da;
-      color: white;
-      border-bottom-right-radius: 2px;
-    }
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: var(--header-surface);
+            flex-shrink: 0;
+            position: relative;
+        }
 
-    .bot-message {
-      align-self: flex-start;
-      background-color: #4f545c;
-      color: #dcddde;
-      border-bottom-left-radius: 2px;
-    }
+        .bot-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #e0e0ff;
+            margin-right: 16px;
+            border: 2px solid var(--primary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .bot-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-primary);
+        }
 
-    .typing {
-      font-style: italic;
-      color: #b9bbbe;
-    }
+        .bot-info .status {
+            font-size: 13px;
+            color: #4ade80; 
+            display: flex;
+            align-items: center;
+        }
 
-    .typing-dots::after {
-      content: '...';
-      animation: blink 1s steps(5, start) infinite;
-    }
+        .bot-info .status::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
 
-    @keyframes blink {
-      0%, 20%, 50%, 80%, 100% { opacity: 0; }
-      10%, 30%, 60%, 90% { opacity: 1; }
-    }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            50% { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
+        }
 
-    .chat-input {
-      display: flex;
-      padding: 10px 12px;
-      border-top: 1px solid #202225;
-      background-color: #40444b;
-      gap: 6px;
-    }
+        #lang-button {
+            margin-left: auto;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        #lang-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        #lang-button svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-secondary);
+        }
 
-    .chat-input textarea {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: none;
-      outline: none;
-      resize: none;
-      max-height: 120px;
-      background-color: #303339;
-      color: #dcddde;
-    }
+        #lang-map {
+            display: none;
+            position: absolute;
+            top: 75px;
+            right: 20px;
+            background-color: var(--header-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        #lang-map.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #lang-map h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+        #lang-map ul { list-style: none; padding: 0; margin: 0; }
+        #lang-map li { font-size: 14px; padding: 6px 0; }
+        #lang-map li code { background-color: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--primary-accent); }
 
-    .chat-input button {
-      padding: 8px 14px;
-      background-color: #7289da;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-    }
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
 
-    .chat-input button:hover {
-      background-color: #5b6eae;
-    }
+        .message {
+            display: flex;
+            max-width: 80%;
+            animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--bot-bubble);
+            margin-right: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .message-content {
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.6;
+        }
 
-    .chat-messages::-webkit-scrollbar {
-      width: 6px;
-    }
+        .user-message {
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .user-message .message-content {
+            background: var(--user-bubble);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
 
-    .chat-messages::-webkit-scrollbar-thumb {
-      background-color: #202225;
-      border-radius: 3px;
-    }
+        .bot-message {
+            align-self: flex-start;
+        }
+        .bot-message .message-content {
+            background-color: var(--bot-bubble);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
 
-    .chat-messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-  </style>
+        .typing {
+            align-items: center;
+        }
+        .typing .message-content {
+            display: flex;
+            gap: 5px;
+            padding: 16px 20px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        .chat-input {
+            display: flex;
+            /* Adjusted padding to make space for the disclaimer */
+            padding: 12px 24px 8px;
+            background-color: transparent;
+            gap: 16px;
+            align-items: center;
+        }
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .chat-input textarea {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            outline: none;
+            resize: none;
+            max-height: 150px;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .chat-input textarea:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+        .chat-input button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-accent);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(137, 180, 250, 0.3);
+        }
+        .chat-input button:hover {
+            background-color: #a6d1fd;
+        }
+        .chat-input button:active {
+            transform: scale(0.95);
+        }
+        .chat-input button svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--background);
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 8px; }
+        .chat-messages::-webkit-scrollbar-thumb { background-color: #414561; border-radius: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        
+        /* --- NEW --- */
+        .disclaimer {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 0 24px 16px;
+            margin: 0;
+            line-height: 1.4;
+            flex-shrink: 0;
+        }
+        /* --- END NEW --- */
+        
+        @media (max-width: 600px) {
+            .chat-container {
+                width: 100%;
+                height: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                border: none;
+            }
+            .chat-messages { padding: 16px; }
+            .chat-input { padding: 12px; }
+        }
+    </style>
 </head>
 <body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="bot-avatar">B</div>
+            <div class="bot-info">
+                <h1>Baymax</h1>
+                <div class="status">Online</div>
+            </div>
+            <button id="lang-button" title="Supported Languages">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </button>
+            <div id="lang-map">
+                <h3>Supported Languages</h3>
+                <ul>
+                    <li><code>hi</code> : Hindi</li>
+                    <li><code>bn</code> : Bengali</li>
+                    <li><code>ta</code> : Tamil</li>
+                    <li><code>te</code> : Telugu</li>
+                    <li><code>ur</code> : Urdu</li>
+                    <li><code>gu</code> : Gujarati</li>
+                    <li><code>mr</code> : Marathi</li>
+                    <li><code>pa</code> : Punjabi</li>
+                    <li><code>kn</code> : Kannada</li>
+                    <li><code>ml</code> : Malayalam</li>
+                </ul>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <div class="input-wrapper">
+                <textarea id="userInput" placeholder="Ask Baymax anything..." rows="1"></textarea>
+            </div>
+            <button onclick="sendMessage()" title="Send Message">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+        <p class="disclaimer">
+            Disclaimer: Baymax is an AI assistant. Information provided may be inaccurate. Please consult a qualified medical professional for any health concerns or before making any decisions based on the information provided.
+        </p>
+        </div>
 
-  <div class="chat-container">
-    <div class="chat-header">Baymax Your Personal Healthcare Companion</div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input">
-      <textarea id="userInput" placeholder="Type a message..."></textarea>
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
+    <script>
+        // --- DOM Elements ---
+        const chatMessages = document.getElementById('chatMessages');
+        const inputField = document.getElementById('userInput');
+        const langButton = document.getElementById('lang-button');
+        const langMap = document.getElementById('lang-map');
 
-  <script>
-    const chatMessages = document.getElementById('chatMessages');
-    const inputField = document.getElementById('userInput');
-
-    inputField.addEventListener('input', () => {
-      inputField.style.height = 'auto';
-      inputField.style.height = inputField.scrollHeight + 'px';
-      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    });
-
-    inputField.addEventListener('keydown', function(event) {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
-
-    async function sendMessage() {
-      let input = inputField.value.trim();
-      if (!input) return;
-
-      addMessage(input, 'user');
-      inputField.value = '';
-      inputField.style.height = 'auto';
-
-      // Typing indicator with animated dots
-      const typingIndicator = addMessage("Bot is typing", 'bot', true, true);
-
-      try {
-        const response = await fetch("http://127.0.0.1:8000/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input })
+        // --- Event Listeners ---
+        langButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            langMap.classList.toggle('visible');
         });
-        const data = await response.json();
+        document.addEventListener('click', (e) => {
+            if (!langMap.contains(e.target) && !langButton.contains(e.target)) {
+                langMap.classList.remove('visible');
+            }
+        });
+        inputField.addEventListener('input', () => {
+            inputField.style.height = 'auto';
+            inputField.style.height = (inputField.scrollHeight) + 'px';
+        });
+        inputField.addEventListener('keydown', (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
 
-        await new Promise(res => setTimeout(res, 800));
+        // --- Core Functions ---
+        async function sendMessage() {
+            const input = inputField.value.trim();
+            if (!input) return;
 
-        typingIndicator.remove();
-        addMessage(data.reply, 'bot');
+            addMessage(input, 'user');
+            inputField.value = '';
+            inputField.style.height = 'auto';
 
-      } catch (error) {
-        typingIndicator.remove();
-        addMessage("Error: Could not reach the server.", 'bot');
-      }
+            const typingIndicator = addMessage("", 'bot', true);
 
-      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    }
+            try {
+                const response = await fetch("http://127.0.0.1:8000/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: input })
+                });
 
-    function addMessage(text, type, isTyping=false, animateDots=false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.classList.add('message');
-      msgDiv.classList.add(type === 'user' ? 'user-message' : 'bot-message');
-      if (isTyping) msgDiv.classList.add('typing');
-      if (animateDots) msgDiv.classList.add('typing-dots');
-      msgDiv.textContent = text;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-      return msgDiv;
-    }
-  </script>
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                
+                const data = await response.json();
+                
+                // Simulate network latency
+                await new Promise(res => setTimeout(res, 800));
 
+                typingIndicator.remove();
+                addMessage(data.reply, 'bot');
+
+            } catch (error) {
+                console.error("API call failed:", error);
+                typingIndicator.remove();
+                addMessage("I seem to be having trouble connecting. Please check your connection and try again.", 'bot');
+            }
+        }
+
+        function addMessage(text, type, isTyping = false) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `message ${type}-message`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'bot' ? 'B' : 'U';
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            if (isTyping) {
+                messageWrapper.classList.add('typing');
+                content.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            } else {
+                content.textContent = text;
+            }
+
+            if (type === 'bot') {
+                messageWrapper.appendChild(avatar);
+            }
+            messageWrapper.appendChild(content);
+
+            chatMessages.appendChild(messageWrapper);
+            scrollToBottom();
+            return messageWrapper;
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        // --- Animated Background ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+
+        const particleConfig = {
+            count: 50,
+            speed: 0.1,
+            color: 'rgba(137, 180, 250, 0.5)',
+            minRadius: 1,
+            maxRadius: 3,
+            lineDistance: 150
+        };
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * particleConfig.speed;
+                this.vy = (Math.random() - 0.5) * particleConfig.speed;
+                this.radius = particleConfig.minRadius + Math.random() * (particleConfig.maxRadius - particleConfig.minRadius);
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = particleConfig.color;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < particleConfig.count; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function handleParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < particleConfig.lineDistance) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(137, 180, 250, ${1 - dist / particleConfig.lineDistance})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(handleParticles);
+        }
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            initParticles();
+        });
+
+        // --- Initial Load ---
+        window.onload = () => {
+            addMessage("Hello! I am Baymax, your personal healthcare companion. How may I help you today?, If you are more comfortable in another language message me the language code of your preferred language. The codes can be found by clicking on the icon in the top right of the chatbox.", 'bot');
+            initParticles();
+            handleParticles();
+        };
+    </script>
 </body>
 </html>
